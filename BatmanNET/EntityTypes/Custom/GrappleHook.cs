@@ -123,8 +123,21 @@ namespace BatmanNET.EntityTypes.Custom
 
         public void Delete()
         {
-            Rope.DetachEntity(Owner);
-            Rope.DetachEntity(Hook);
+            if (Rope == null)
+            {
+                return;
+            }
+
+            if (Owner != null)
+            {
+                Rope.DetachEntity(Owner);
+            }
+
+            if (Hook != null)
+            {
+                Rope.DetachEntity(Hook);
+            }
+
             Rope.Delete();
             Hook.Delete();
         }

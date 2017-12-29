@@ -35,6 +35,9 @@
     <Reference Include="ScriptHookVDotNet2">
       <HintPath>..\..\..\..\Documents\Visual Studio 2017\Lib\ScriptHookVDotNet2.dll</HintPath>
     </Reference>
+    <Reference Include="SimpleUI">
+      <HintPath>..\..\..\..\Documents\Visual Studio 2017\Lib\SimpleUI.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -58,6 +61,11 @@
     <Compile Include="Native\Extensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\Mathf.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ExternalRefs\ScriptHookVDotNet2.dll" />
+    <Content Include="ExternalRefs\ScriptHookVDotNet2.xml" />
+    <Content Include="ExternalRefs\SimpleUI.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
