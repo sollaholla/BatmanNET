@@ -121,25 +121,35 @@ namespace BatmanNET.EntityTypes.Custom
             Initialized = true;
         }
 
+        /// <summary>
+        /// Delete the grapple hook.
+        /// </summary>
         public void Delete()
         {
-            if (Rope == null)
+            try
             {
-                return;
-            }
+                if (Rope == null)
+                {
+                    return;
+                }
 
-            if (Owner != null)
-            {
-                Rope.DetachEntity(Owner);
-            }
+                if (Owner != null)
+                {
+                    Rope.DetachEntity(Owner);
+                }
 
-            if (Hook != null)
-            {
-                Rope.DetachEntity(Hook);
-            }
+                if (Hook != null)
+                {
+                    Rope.DetachEntity(Hook);
 
-            Rope.Delete();
-            Hook.Delete();
+                    Hook.Delete();
+                }
+
+                Rope.Delete();
+            }
+            catch { 
+                // ignored
+            }
         }
     }
 }
