@@ -1,4 +1,5 @@
-﻿using BatmanNET.Interfaces;
+﻿using System;
+using BatmanNET.Interfaces;
 using GTA;
 
 namespace BatmanNET.EntityTypes
@@ -16,5 +17,10 @@ namespace BatmanNET.EntityTypes
         public Ped Ped { get; }
         public abstract void Update();
         public abstract void Abort();
+
+        public static explicit operator Ped(Character v)
+        {
+            return v.Model.IsPed ? new Ped(v.Handle) : null;
+        }
     }
 }

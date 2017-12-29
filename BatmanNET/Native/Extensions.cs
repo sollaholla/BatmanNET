@@ -1,4 +1,5 @@
 ﻿using GTA;
+using GTA.Math;
 using GTA.Native;
 using System;
 
@@ -23,7 +24,23 @@ namespace BatmanNET.Native
                 {
                     ped.Task.ClearAllImmediately();
 
+                    var didSetVel = false;
+                    var initialVel = Vector3.Zero;
+
+                    if (ped.IsFalling)
+                    {
+                        initialVel = ped.Velocity;
+                        didSetVel = true;
+                        ped.Velocity = Vector3.Zero;
+                    }
+
                     ped.Task.PlayAnimation(dictionary, name, blendIn, blendOut, duration, flags, playbackRate);
+
+                    if (didSetVel)
+                    {
+                        ped.SetConfigFlag(60, true);
+                        ped.Velocity = initialVel;
+                    }
 
                     waitTime = DateTime.Now.AddSeconds(timeUntilForceAnim);
                 }

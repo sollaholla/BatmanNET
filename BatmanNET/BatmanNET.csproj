@@ -20,6 +20,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -48,6 +50,9 @@
     <Compile Include="Debug\PropertyViewer.cs" />
     <Compile Include="EntityTypes\Character.cs" />
     <Compile Include="EntityTypes\Custom\BatmanEntity.cs" />
+    <Compile Include="EntityTypes\Custom\GrappleHook.cs" />
+    <Compile Include="EntityTypes\Custom\Rope.cs" />
+    <Compile Include="EntityTypes\Custom\RopeType.cs" />
     <Compile Include="Interfaces\IUpdatable.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Native\Extensions.cs" />

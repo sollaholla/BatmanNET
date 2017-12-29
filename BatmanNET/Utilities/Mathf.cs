@@ -1,4 +1,6 @@
-﻿namespace BatmanNET.Utilities
+﻿using GTA.Math;
+
+namespace BatmanNET.Utilities
 {
     public static class Mathf
     {
@@ -21,6 +23,22 @@
             else
             {
                 result = value;
+            }
+            return result;
+        }
+
+        public static Vector3 MoveTowards(Vector3 current, Vector3 target, float maxDistanceDelta)
+        {
+            Vector3 a = target - current;
+            float magnitude = a.Length();
+            Vector3 result;
+            if (magnitude <= maxDistanceDelta || magnitude < 1.401298E-45f)
+            {
+                result = target;
+            }
+            else
+            {
+                result = current + a / magnitude * maxDistanceDelta;
             }
             return result;
         }
