@@ -1,12 +1,7 @@
-﻿using BatmanNET.Debug;
-using BatmanNET.EntityTypes.Custom;
+﻿using BatmanNET.Handlers;
 using GTA;
-using GTA.Math;
-using GTA.Native;
+using ScriptCommunicator;
 using System;
-using System.Drawing;
-using System.Windows.Forms;
-using Control = GTA.Control;
 
 namespace BatmanNET
 {
@@ -15,61 +10,68 @@ namespace BatmanNET
         public Main()
         {
             Tick += OnTick;
-            KeyUp += OnKeyUp;
             Aborted += OnAborted;
+
+            ProfileMenuHandler = new MenuHandler();
         }
 
-        private BatmanEntity PlayerBatman { get; set; }
-
-        private void OnAborted(object sender, EventArgs e)
-        {
-            PlayerBatman?.Abort();
+        /// <summary>
+        /// The player's batman handler used to update the batman entity that's attached to the player ped.
+        /// </summary>
+        public PlayerBatmanHandler PlayerBatman {
+            get; private set;
         }
 
-        private void OnKeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.O)
-            {
-                PlayerBatman.Position = new Vector3(-127.11f, -645.21f, 176.67f);
-                PlayerBatman.Heading = 178.76f;
-            }
+        /// <summary>
+        /// This handles activating/deactivating the profiles.
+        /// </summary>
+        public MenuHandler ProfileMenuHandler {
+            get; private set;
+        }
+
+        /// <summary>
+        /// True if batman powers are enabled.
+        /// </summary>
+        public bool Enabled {
+            get => ProfileMenuHandler.BatmanProfile != null;
         }
 
         private void OnTick(object sender, EventArgs e)
         {
-            if (PlayerBatman == null || !PlayerBatman.Exists())
+            TogglePlayerBatman();
+            ProfileMenuHandler.Update();
+        }
+
+        private void TogglePlayerBatman()
+        {
+            if (!Enabled)
             {
-                PlayerBatman = new BatmanEntity(Game.Player.Character);
-            }
-
-            Function.Call(Hash.SET_PLAYER_HAS_RESERVE_PARACHUTE, Game.Player);
-
-            UI.ShowHudComponentThisFrame(HudComponent.Reticle);
-
-            PlayerBatman.Update();
-            PlayerBatman.GlidingMovement = new Vector3(Game.GetControlNormal(2, Control.MoveLeftRight), -Game.GetControlNormal(2, Control.MoveUpDown), 0f);
-
-            if (Game.IsControlJustPressed(2, Control.Jump))
-                PlayerBatman.StartGlide();
-
-            var ray = World.Raycast(GameplayCamera.Position, GameplayCamera.Direction, 200, IntersectOptions.Map, PlayerBatman);
-            if (ray.DitHitAnything)
-            {
-                Game.DisableControlThisFrame(2, Control.Cover);
-                if (Game.IsDisabledControlJustPressed(2, Control.Cover))
+                if (PlayerBatman == null)
                 {
-                    PlayerBatman.GrappleToPoint(ray.HitCoords, ray.SurfaceNormal);
+                    return;
                 }
+
+                PlayerBatman.Abort();
+
+                PlayerBatman = null;
             }
+            else
+            {
+                if (PlayerBatman == null)
+                {
+                    PlayerBatman = new PlayerBatmanHandler();
+                }
 
-            if (PlayerBatman.IsGliding && !PlayerBatman.IsDiving) Function.Call(Hash.SET_PED_COMPONENT_VARIATION, PlayerBatman.Handle, 8, 1, 0, 0);
-            else Function.Call(Hash.SET_PED_COMPONENT_VARIATION, PlayerBatman.Handle, 8, 0, 0, 0);
+                PlayerBatman.Update();
+            }
+        }
 
-            PlayerBatman.SetDiveToggle(Game.CurrentInputMode == InputMode.MouseAndKeyboard && Game.IsControlPressed(2, Control.Sprint) || Game.CurrentInputMode == InputMode.GamePad && Game.IsControlPressed(2, Control.Attack));
-
-            PropertyViewer.Analyse(PlayerBatman.Ped, new Point(Game.ScreenResolution.Width / 2, 0), 0.2f, 10f, true);
-            return;
-            PropertyViewer.Analyse(PlayerBatman, Point.Empty, 0.2f, 10f, false);
+        private void OnAborted(object sender, EventArgs e)
+        {
+            if (PlayerBatman != null)
+            {
+                PlayerBatman.Abort();
+            }
         }
     }
 }

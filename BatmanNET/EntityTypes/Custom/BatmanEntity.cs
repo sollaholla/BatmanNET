@@ -17,6 +17,14 @@ namespace BatmanNET.EntityTypes.Custom
             MaxAttackDistance = 15f;
             MaxLandHeight = 3.5f;
             BatGrappleModel = "w_pi_pistol";
+
+            Streaming.RequestAnimDict("move_fall");
+            Streaming.RequestAnimDict("move_fall@beastjump");
+            Streaming.RequestAnimDict("skydive@parachute@");
+            Streaming.RequestAnimDict("skydive@freefall");
+            Streaming.RequestAnimDict("weapons@pistol_1h@");
+            Streaming.RequestAnimDict("swimming@first_person@");
+            Streaming.RequestAnimDict("misslamar1leadinout");
         }
 
         /// <summary>
@@ -313,6 +321,13 @@ namespace BatmanNET.EntityTypes.Custom
             get; private set;
         }
 
+        /// <summary>
+        /// The speed of the grapple reeling.
+        /// </summary>
+        public float GrappleSpeed {
+            get; private set;
+        }
+
         public override void Update()
         {
             HandleGlide();
@@ -320,6 +335,12 @@ namespace BatmanNET.EntityTypes.Custom
             HandleGrapple();
             HandleRagdoll();
             HandleFalling();
+            HandleMoveRate();
+        }
+
+        private void HandleMoveRate()
+        {
+            Function.Call(Hash.SET_PED_MOVE_RATE_OVERRIDE, Ped.Handle, 1.15f);
         }
 
         private void HandleRagdoll()
@@ -362,6 +383,10 @@ namespace BatmanNET.EntityTypes.Custom
             Function.Call(Hash.SET_ENTITY_COORDS, Ped.Handle, Ped.Position.X, Ped.Position.Y, Ped.Position.Z - Ped.HeightAboveGround);
 
             Ped.Task.ClearAll();
+
+            var direction = Quaternion.Euler(0, 0, Ped.Rotation.Z) * Vector3.RelativeFront;
+
+            Ped.Heading = direction.ToHeading();
 
             if (!SpecialLanding)
             {
@@ -419,6 +444,8 @@ namespace BatmanNET.EntityTypes.Custom
                 {
                     var prop = World.CreateProp(BatGrappleModel, Ped.Position + Vector3.RelativeTop * 100, false, false);
 
+                    prop.FreezePosition = true;
+
                     prop.AttachTo(Ped, Ped.GetBoneIndex(Bone.SKEL_R_Hand), new Vector3(0.1f, 0f, 0), new Vector3(-90, 0, 0));
 
                     BatGrappleInstance = prop;
@@ -454,7 +481,14 @@ namespace BatmanNET.EntityTypes.Custom
                     IsGrappling = false;
                 }
 
+                GrappleSpeed = 0f;
+
                 return;
+            }
+
+            if (Exists(BatGrappleInstance) && BatGrappleInstance.IsAttachedTo(Ped))
+            {
+                Function.Call(Hash.PROCESS_ENTITY_ATTACHMENTS, Ped.Handle);
             }
 
             if (!IsPlayingGrappleAnimation)
@@ -474,11 +508,6 @@ namespace BatmanNET.EntityTypes.Custom
                 if (!GrappleHook.IsHooked)
                 {
                     Ped.SetConfigFlag(60, true);
-
-                    if (Ped.HeightAboveGround < 1.5f)
-                    {
-                        Ped.Task.ClearAnimation("move_fall", "fall_med");
-                    }
 
                     GrappleHook.Update();
                 }
@@ -511,10 +540,10 @@ namespace BatmanNET.EntityTypes.Custom
                         var dirNormalized = (LastGrapplePoint - Ped.Position).Normalized;
 
                         Ped.SetConfigFlag(60, true);
-
-                        if (Ped.HasCollidedWithAnything)
+                        
+                        if (Ped.HasCollidedWithAnything && Ped.Velocity.Length() > 5f)
                         {
-                            var ray = World.Raycast(Ped.Position + (Quaternion.Euler(0, 0, Ped.Rotation.Z) * Vector3.RelativeFront * 1.2f) + Vector3.RelativeTop * 1.5f, Vector3.RelativeBottom, 3f, IntersectOptions.Map, Ped);
+                            var ray = World.Raycast(Ped.Position + (-LastGrappleWallNormal * 1.15f) + (Vector3.RelativeTop * 2f), Vector3.RelativeBottom, 5f, IntersectOptions.Map, Ped);
 
                             if (!ray.DitHitAnything)
                             {
@@ -530,7 +559,11 @@ namespace BatmanNET.EntityTypes.Custom
                             }
                             else
                             {
+                                Ped.Heading = (-LastGrappleWallNormal).ToHeading();
+
                                 Ped.Task.ClearAll();
+
+                                Ped.Velocity = Vector3.Zero;
 
                                 Ped.Task.Climb();
                             }
@@ -541,69 +574,15 @@ namespace BatmanNET.EntityTypes.Custom
                         {
                             Ped.Quaternion = Quaternion.FromToRotation(Ped.UpVector, dirNormalized) * Ped.Quaternion;
 
-                            var gravity = (new Vector3(0, 0, (float)Math.Pow(9.81f, 2) * 0.1f));
-
-                            if (Ped.HeightAboveGround < 2f)
-                                gravity = Vector3.Zero;
-
-                            Ped.Velocity = (dirNormalized * 50f) - gravity;
-
                             GrappleHook.Update();
+
+                            GrappleSpeed = Mathf.Lerp(GrappleSpeed, 90f, Game.LastFrameTime * 2.5f);
+
+                            Ped.Velocity = dirNormalized * GrappleSpeed;
                         }
                     }
                 }
             }
-        }
-
-        private void StartGrappleTaskSequence()
-        {
-            var vel = Ped.Velocity;
-
-            Ped.Task.ClearAll();
-
-            Ped.Velocity = Vector3.Zero;
-
-            if (!Ped.GetConfigFlag(60))
-            {
-                Ped.PlayAnimation("move_fall", "fall_med", 8.0f, -8.0f, -1, AnimationFlags.Loop);
-            }
-
-            Ped.PlayAnimation("weapons@pistol_1h@", "fire_med", 8.0f, -8.0f, -1, AnimationFlags.UpperBodyOnly | AnimationFlags.StayInEndFrame | AnimationFlags.AllowRotation, 0.0f);
-
-            Ped.Velocity = vel;
-
-            Ped.SetConfigFlag(60, true);
-        }
-
-        /// <summary>
-        /// Make batman grapple towards the specified point.
-        /// </summary>
-        /// <param name="point"></param>
-        public void GrappleToPoint(Vector3 point, Vector3 wallNormal)
-        {
-            if (IsAttackingAnything || IsDoingCombatRoll || IsDiving || Ped.IsRagdoll || Ped.IsGettingUp || IsGrappling)
-            {
-                return;
-            }
-
-            if (IsGliding)
-            {
-                IsGliding = false;
-            }
-
-            LastGrapplePoint = point;
-            LastGrappleWallNormal = wallNormal;
-            IsGrappling = true;
-        }
-
-        private void ClearGrappleAnimation()
-        {
-            IsPlayingGrappleAnimation = false;
-        }
-
-        private void ClearGrappleReelAnimation()
-        {
-            IsPlayingGrappleReelAnimation = false;
         }
 
         private void HandleGlide()
@@ -663,11 +642,18 @@ namespace BatmanNET.EntityTypes.Custom
 
                     var initialVelocity = Ped.Velocity;
 
-                    Ped.Task.ClearAll();
+                    if (Ped.IsVaulting)
+                    {
+                        Ped.Task.ClearAllImmediately();
+                    }
+                    else
+                    {
+                        Ped.Task.ClearAll();
+                    }
 
                     Ped.Velocity = Vector3.Zero;
 
-                    Ped.Task.PlayAnimation("skydive@freefall", "free_forward", 4.0f, -4.0f, -1, AnimationFlags.Loop, 0f);
+                    Ped.PlayAnimation("skydive@freefall", "free_forward", 4.0f, -4.0f, -1, AnimationFlags.Loop, 0f);
 
                     Ped.SetConfigFlag(60, true);
 
@@ -683,7 +669,7 @@ namespace BatmanNET.EntityTypes.Custom
 
                     Ped.SetConfigFlag(60, true);
 
-                    Ped.ApplyForce((Vector3.RelativeBottom * (float)Math.Pow(9.81f, 2)) * Game.LastFrameTime);
+                    Ped.ApplyForce((Vector3.RelativeBottom * (float)Math.Pow(9.81f, 2)) * 0.5f * Game.LastFrameTime);
 
                     Ped.Quaternion = pedUpQuaternion;
                 }
@@ -738,9 +724,9 @@ namespace BatmanNET.EntityTypes.Custom
                 {
                     Ped.SetConfigFlag(60, true);
 
-                    GlideHorizontalAdditive = Vector3.Lerp(GlideHorizontalAdditive, new Vector3(0, (22.5f * GlidingMovement.Y), 0), Game.LastFrameTime * 5f);
+                    GlideHorizontalAdditive = Vector3.Lerp(GlideHorizontalAdditive, new Vector3(0, (32f * GlidingMovement.Y), 0), Game.LastFrameTime * 5f);
 
-                    GlideVerticalAdditive = Vector3.Lerp(GlideVerticalAdditive, new Vector3(5.5f * GlidingMovement.X, 0f, 0f), Game.LastFrameTime * 5f);
+                    GlideVerticalAdditive = Vector3.Lerp(GlideVerticalAdditive, new Vector3(6.5f * GlidingMovement.X, 0f, 0f), Game.LastFrameTime * 5f);
 
                     var pedUpQuaternion = Quaternion.Euler(0, 0, Ped.Rotation.Z) * Quaternion.Euler(new Vector3(0, -85f, 0) - GlideHorizontalAdditive) * Quaternion.Euler(GlideVerticalAdditive);
 
@@ -748,9 +734,7 @@ namespace BatmanNET.EntityTypes.Custom
 
                     GlideDrag = Mathf.Lerp(GlideDrag, 0.1f, Game.LastFrameTime * 0.15f);
 
-                    GlideDownSpeed = Mathf.Lerp(GlideDownSpeed, 0.6f, Game.LastFrameTime * 1f);
-
-                    UI.ShowSubtitle(Ped.Velocity.Length().ToString());
+                    GlideDownSpeed = Mathf.Lerp(GlideDownSpeed, 0.6f, Game.LastFrameTime * 0.8f);
 
                     Ped.Velocity = (Ped.ForwardVector + ((Ped.UpVector + Vector3.WorldUp * GlideDownSpeed) * GlideDrag)) * 0.25f * Math.Min(InitialGlideVelocity.Length(), 50) + new Vector3(0, 0, -9.81f);
                 }
@@ -760,6 +744,26 @@ namespace BatmanNET.EntityTypes.Custom
             {
                 IsGliding = false;
             }
+        }
+
+        private void StartGrappleTaskSequence()
+        {
+            var vel = Ped.Velocity;
+
+            Ped.Task.ClearAll();
+
+            Ped.Velocity = Vector3.Zero;
+
+            if (!Ped.GetConfigFlag(60))
+            {
+                Ped.PlayAnimation("move_fall", "fall_med", 8.0f, -8.0f, -1, AnimationFlags.Loop);
+            }
+
+            Ped.PlayAnimation("weapons@pistol_1h@", "fire_med", 8.0f, -8.0f, -1, AnimationFlags.UpperBodyOnly | AnimationFlags.StayInEndFrame | AnimationFlags.AllowRotation, 0.0f);
+
+            Ped.Velocity = vel;
+
+            Ped.SetConfigFlag(60, true);
         }
 
         /// <summary>
@@ -822,6 +826,37 @@ namespace BatmanNET.EntityTypes.Custom
             }
 
             IsDoingGlideKick = true;
+        }
+
+        /// <summary>
+        /// Make batman grapple towards the specified point.
+        /// </summary>
+        /// <param name="point"></param>
+        public void GrappleToPoint(Vector3 point, Vector3 wallNormal)
+        {
+            if (IsAttackingAnything || IsDoingCombatRoll || IsDiving || Ped.IsRagdoll || Ped.IsGettingUp || IsGrappling)
+            {
+                return;
+            }
+
+            if (IsGliding)
+            {
+                IsGliding = false;
+            }
+
+            LastGrapplePoint = point;
+            LastGrappleWallNormal = wallNormal;
+            IsGrappling = true;
+        }
+
+        private void ClearGrappleAnimation()
+        {
+            IsPlayingGrappleAnimation = false;
+        }
+
+        private void ClearGrappleReelAnimation()
+        {
+            IsPlayingGrappleReelAnimation = false;
         }
 
         private void ClearGlideAnimation()
@@ -887,6 +922,8 @@ namespace BatmanNET.EntityTypes.Custom
 
         public override void Abort()
         {
+            //Ped.FreezePosition = false;
+
             if (GrappleHook != null)
             {
                 GrappleHook.Delete();

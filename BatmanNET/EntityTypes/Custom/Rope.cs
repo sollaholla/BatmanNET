@@ -142,17 +142,14 @@ namespace BatmanNET.EntityTypes.Custom
         ///     Attaches two entities to this rope.
         /// </summary>
         /// <param name="entity1">The first entity to attach.</param>
-        /// <param name="entity1Offset">The offset from the first entity.</param>
+        /// <param name="offset1">The offset from the first entity.</param>
         /// <param name="entity2">The second entity to attach.</param>
-        /// <param name="entity2Offset">The offset from the second entity.</param>
+        /// <param name="offset2">The offset from the second entity.</param>
         /// <param name="length">The desired length of the rope.</param>
-        public void AttachEntities(Entity entity1, Vector3 entity1Offset, Entity entity2, Vector3 entity2Offset,
+        public void AttachEntities(Entity entity1, Vector3 offset1, Entity entity2, Vector3 offset2,
             float length,
             string bone1 = "", string bone2 = "")
         {
-            var offset1 = string.IsNullOrEmpty(bone1) ? entity1.GetOffsetInWorldCoords(entity1Offset) : Vector3.Zero;
-            var offset2 = string.IsNullOrEmpty(bone2) ? entity2.GetOffsetInWorldCoords(entity2Offset) : Vector3.Zero;
-
             Function.Call(Hash.ATTACH_ENTITIES_TO_ROPE, Handle, entity1.Handle, entity2.Handle,
                 offset1.X, offset1.Y, offset1.Z,
                 offset2.X, offset2.Y, offset2.Z,

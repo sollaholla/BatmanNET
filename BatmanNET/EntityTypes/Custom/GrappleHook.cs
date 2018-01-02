@@ -3,6 +3,7 @@ using BatmanNET.Utilities;
 using GTA;
 using GTA.Math;
 using GTA.Native;
+using System.Drawing;
 
 namespace BatmanNET.EntityTypes.Custom
 {
@@ -11,7 +12,7 @@ namespace BatmanNET.EntityTypes.Custom
         public GrappleHook(Vector3 targetPoint, Character owner, Entity grappleGun)
         {
             TargetPoint = targetPoint;
-            Owner = owner;
+            Character = owner;
             GrappleGun = grappleGun;
         }
 
@@ -25,7 +26,7 @@ namespace BatmanNET.EntityTypes.Custom
         /// <summary>
         /// The owner of the grapple hook.
         /// </summary>
-        public Character Owner {
+        public Character Character {
             get;
         }
 
@@ -65,6 +66,10 @@ namespace BatmanNET.EntityTypes.Custom
         {
             Init();
 
+            //DrawLine(GrappleGun.GetBoneCoord("Gun_Muzzle"), TargetPoint, Color.Black);
+
+            //Rope.AttachEntities(GrappleGun, Vector3.Zero, Hook, Hook.Position, float.MaxValue, "Gun_Muzzle", string.Empty);
+
             if (IsHooked)
             {
                 return;
@@ -82,14 +87,14 @@ namespace BatmanNET.EntityTypes.Custom
                 Hook.Position = TargetPoint;
                 Hook.FreezePosition = true;
                 IsHooked = true;
+                //Rope.StartWinding();
             }
         }
 
-        private void Trim()
-        {
-            Rope.StartWinding();
-            Rope.Length = GrappleGun.Position.DistanceTo(Hook.Position);
-        }
+        //private void DrawLine(Vector3 from, Vector3 to, Color col)
+        //{
+        //    Function.Call(Hash.DRAW_LINE, from.X, from.Y, from.Z, to.X, to.Y, to.Z, col.R, col.G, col.B, col.A);
+        //}
 
         public void Abort()
         {
@@ -105,18 +110,22 @@ namespace BatmanNET.EntityTypes.Custom
             if (!Entity.Exists(Hook))
             {
                 Hook = World.CreateProp("prop_cs_dildo_01", GrappleGun.Position, true, false);
+
                 Hook.IsVisible = false;
             }
 
-            if (!Rope.Exists(Rope))
-            {
-                Function.Call(Hash.ROPE_LOAD_TEXTURES);
-                var d = Hook.Position.DistanceTo(TargetPoint);
-                Rope = Rope.AddRope(Hook.Position, Hook.Rotation, 1f, GTARopeType.MetalWire, float.MaxValue, 0f, true, false);
-                Rope.AttachEntities(Hook, Vector3.Zero, GrappleGun, Vector3.Zero, float.MaxValue, string.Empty, string.Empty);
-                Rope.ActivatePhysics();
-                Rope.ConvertToSimple();
-            }
+            //if (!Rope.Exists(Rope))
+            //{
+            //    Function.Call(Hash.ROPE_LOAD_TEXTURES);
+
+            //    float length = float.MaxValue;
+
+            //    Rope = Rope.AddRope(Hook.Position, Hook.Rotation, 0f, GTARopeType.MetalWire, length, 0f, true, false);
+
+            //    Rope.UseShadows = false;
+
+            //    Rope.AttachEntities(GrappleGun, Vector3.Zero, Hook, Hook.Position, length, "Gun_Muzzle", string.Empty);
+            //}
 
             Initialized = true;
         }
@@ -128,26 +137,32 @@ namespace BatmanNET.EntityTypes.Custom
         {
             try
             {
-                if (Rope == null)
-                {
-                    return;
-                }
+                //if (Rope == null)
+                //{
+                //    return;
+                //}
 
-                if (Owner != null)
-                {
-                    Rope.DetachEntity(Owner);
-                }
+                //if (Character != null)
+                //{
+                //    Rope.DetachEntity(Character);
+                //}
 
                 if (Hook != null)
                 {
-                    Rope.DetachEntity(Hook);
+                    //Rope.DetachEntity(Hook);
 
                     Hook.Delete();
                 }
 
-                Rope.Delete();
+                if (GrappleGun != null)
+                {
+                    GrappleGun.Delete();
+                }
+
+                //Rope.Delete();
             }
-            catch { 
+            catch
+            { 
                 // ignored
             }
         }

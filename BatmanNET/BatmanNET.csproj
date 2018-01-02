@@ -35,9 +35,6 @@
     <Reference Include="ScriptHookVDotNet2">
       <HintPath>..\..\..\..\Documents\Visual Studio 2017\Lib\ScriptHookVDotNet2.dll</HintPath>
     </Reference>
-    <Reference Include="SimpleUI">
-      <HintPath>..\..\..\..\Documents\Visual Studio 2017\Lib\SimpleUI.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -56,10 +53,18 @@
     <Compile Include="EntityTypes\Custom\GrappleHook.cs" />
     <Compile Include="EntityTypes\Custom\Rope.cs" />
     <Compile Include="EntityTypes\Custom\RopeType.cs" />
+    <Compile Include="Handlers\PlayerBatmanHandler.cs" />
     <Compile Include="Interfaces\IUpdatable.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Native\Extensions.cs" />
+    <Compile Include="Native\Streaming.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScriptCommunicator\MenuHandler.cs" />
+    <Compile Include="ScriptCommunicator\Profile.cs" />
+    <Compile Include="ScriptCommunicator\CustomProfile.cs" />
+    <Compile Include="ScriptCommunicator\ScriptCommunicator.cs" />
+    <Compile Include="ScriptCommunicator\SerializedProperty.cs" />
+    <Compile Include="ScriptCommunicator\SimpleUI.cs" />
     <Compile Include="Utilities\Mathf.cs" />
   </ItemGroup>
   <ItemGroup>

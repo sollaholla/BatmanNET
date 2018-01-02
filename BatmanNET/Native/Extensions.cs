@@ -20,7 +20,7 @@ namespace BatmanNET.Native
 
             while (!ped.IsPlayingAnimation(dictionary, name))
             {
-                if (DateTime.Now > waitTime)
+                if (DateTime.Now > waitTime || ped.IsVaulting)
                 {
                     ped.Task.ClearAllImmediately();
 
